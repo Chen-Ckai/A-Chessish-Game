@@ -72,6 +72,9 @@ pressed_buttons = set()
 move_limit = 15
 moves_used = 0
 
+#tutorial text
+print("Welcome to the tutorial for A Chessish Game, a puzzle game with different objectives and obstacles. \n This game has you play as a chess piece, and currently, you are a queen (you can move any number of spaces in all eight directions). \n You may notice that certain spaces on the board have different names. \n The button spaces are your win condition: you must stand on each to win. \n The spike space will make you lose when stepped on. \n The wall space will stop your movement, and cannot be stepped on. Got that? \n Ok go wander into the wild good luck")
+
 def get_cell(r, c):
     if 0 <= r < 6 and 0 <= c < 6:
         return board[r][c]
