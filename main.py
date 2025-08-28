@@ -1,3 +1,8 @@
+import threading
+import time
+import os
+
+
 board = [
 
     [
@@ -72,17 +77,8 @@ pressed_buttons = set()
 move_limit = 15
 moves_used = 0
 
-#tutorial text
-print("""
-Welcome to the tutorial for A Chessish Game, a puzzle game with different objectives and obstacles.
-This game has you play as a chess piece, and currently, you are a queen (you can move any number of spaces in all eight directions).
-For example, you can move like this: 'north 3' (putting you 3 spaces north) or 'southeast 2'(putting you 2 spaces south east).
-You may notice that certain spaces on the board have different names.
-The button (b) spaces are your win condition: you must stand on each to win.
-The spike (X) space will make you lose when stepped on.
-The wall space (#) will stop your movement, and cannot be stepped on. Got that?
-Ok go wander into the wild good luck :)
-""")
+timer_event = threading.Event() #stop timer if set
+
 def get_cell(r, c):
     if 0 <= r < 6 and 0 <= c < 6:
         return board[r][c]
@@ -142,13 +138,51 @@ def move_player(path):
         player_pos = (r, c)
     moves_used += 1
 
+def start_timer(duration):
+    def run():
+        remaining = duration
+        while remaining > 0 and not timer_event.is_set():
+            mins, secs = divmod(remaining, 60)
+            # carriage-return keeps the timer on one line in the terminal
+            print(f"⏱ Time left: {mins}:{secs:02d}", end="\r")
+            time.sleep(1)
+            remaining -= 1
+        if timer_event.is_set():
+            return
+        print("\n⏰ Time's up! Game over.")
+        os._exit(0)  # force-terminate even if input() is blocking
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+
+#tutorial text
+print("""
+Welcome to the tutorial for A Chessish Game, a puzzle game with different objectives and obstacles.
+This game has you play as a chess piece, and currently, you are a queen (you can move any number of spaces in all eight directions).
+For example, you can move like this: 'north 3' (putting you 3 spaces north) or 'southeast 2'(putting you 2 spaces south east).
+You may notice that certain spaces on the board have different names.
+The button (b) spaces are your win condition: you must stand on each to win.
+The spike (X) space will make you lose when stepped on.
+The wall space (#) will stop your movement, and cannot be stepped on. Got that?
+Ok go wander into the wild good luck :)
+""")
+
+mode = input("Choose mode: 'moves' (default) or 'timed': ").strip().lower()
+if mode == "timed":
+    try:
+        duration = int(input("Enter time limit in seconds (e.g., 60): ").strip())
+    except:
+        duration = 60
+    start_timer(duration)
+
 # Game loop
 while True:
     if pressed_buttons == buttons_to_press:
         print("🎉 You pressed all the buttons! You win!")
+        timer_event.set()   # stop timer thread if running
         break
     if moves_used >= move_limit:
         print("❌ Out of moves! Game over.")
+        timer_event.set()
         break
 
     print(f"\n📍 You are at {get_cell(*player_pos)['name']} ({get_cell(*player_pos)['type']})")
@@ -157,6 +191,7 @@ while True:
 
     cmd = input("Move (e.g., 'north 3') or 'exit': ").lower()
     if cmd == "exit":
+        timer_event.set()
         break
     try:
         direction, steps = cmd.split()
