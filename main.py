@@ -1,193 +1,165 @@
+import os
+import random
 import threading
 import time
-import os
 
-
-board = [
-
-    [
-    # Row 1
-    {"name": "cell-1-1", "type": "start", "north": None,       "south": "cell-2-1", "east": "cell-1-2", "west": None},
-    {"name": "cell-1-2", "type": "blank", "north": None,       "south": "cell-2-2", "east": "cell-1-3", "west": "cell-1-1"},
-    {"name": "cell-1-3", "type": "blank", "north": None,       "south": "cell-2-3", "east": "cell-1-4", "west": "cell-1-2"},
-    {"name": "cell-1-4", "type": "blank", "north": None,       "south": "cell-2-4", "east": "cell-1-5", "west": "cell-1-3"},
-    {"name": "cell-1-5", "type": "blank", "north": None,       "south": "cell-2-5", "east": "cell-1-6", "west": "cell-1-4"},
-    {"name": "cell-1-6", "type": "blank", "north": None,       "south": "cell-2-6", "east": None,       "west": "cell-1-5"},
-    ],
-
-    # Row 2
-    [
-    {"name": "cell-2-1", "type": "blank", "north": "cell-1-1", "south": "cell-3-1", "east": "cell-2-2", "west": None},
-    {"name": "cell-2-2", "type": "blank", "north": "cell-1-2", "south": "cell-3-2", "east": "cell-2-3", "west": "cell-2-1"},
-    {"name": "cell-2-3", "type": "spike", "north": "cell-1-3", "south": "cell-3-3", "east": "cell-2-4", "west": "cell-2-2"},
-    {"name": "cell-2-4", "type": "button", "north": "cell-1-4", "south": "cell-3-4", "east": "cell-2-5", "west": "cell-2-3"},
-    {"name": "cell-2-5", "type": "blank", "north": "cell-1-5", "south": "cell-3-5", "east": "cell-2-6", "west": "cell-2-4"},
-    {"name": "cell-2-6", "type": "blank", "north": "cell-1-6", "south": "cell-3-6", "east": None,       "west": "cell-2-5"},
-    ],
-    [
-    # Row 3
-    {"name": "cell-3-1", "type": "button", "north": "cell-2-1", "south": "cell-4-1", "east": "cell-3-2", "west": None},
-    {"name": "cell-3-2", "type": "blank", "north": "cell-2-2", "south": "cell-4-2", "east": "cell-3-3", "west": "cell-3-1"},
-    {"name": "cell-3-3", "type": "blank", "north": "cell-2-3", "south": "cell-4-3", "east": "cell-3-4", "west": "cell-3-2"},
-    {"name": "cell-3-4", "type": "blank", "north": "cell-2-4", "south": "cell-4-4", "east": "cell-3-5", "west": "cell-3-3"},
-    {"name": "cell-3-5", "type": "blank", "north": "cell-2-5", "south": "cell-4-5", "east": "cell-3-6", "west": "cell-3-4"},
-    {"name": "cell-3-6", "type": "blank", "north": "cell-2-6", "south": "cell-4-6", "east": None,       "west": "cell-3-5"},
-    ],
-    [
-    # Row 4
-    {"name": "cell-4-1", "type": "blank", "north": "cell-3-1", "south": "cell-5-1", "east": "cell-4-2", "west": None},
-    {"name": "cell-4-2", "type": "blank", "north": "cell-3-2", "south": "cell-5-2", "east": "cell-4-3", "west": "cell-4-1"},
-    {"name": "cell-4-3", "type": "blank", "north": "cell-3-3", "south": "cell-5-3", "east": "cell-4-4", "west": "cell-4-2"},
-    {"name": "cell-4-4", "type": "blank", "north": "cell-3-4", "south": "cell-5-4", "east": "cell-4-5", "west": "cell-4-3"},
-    {"name": "cell-4-5", "type": "blank", "north": "cell-3-5", "south": "cell-5-5", "east": "cell-4-6", "west": "cell-4-4"},
-    {"name": "cell-4-6", "type": "blank", "north": "cell-3-6", "south": "cell-5-6", "east": None,       "west": "cell-4-5"},
-    ],
-    [
-    # Row 5
-    {"name": "cell-5-1", "type": "blank", "north": "cell-4-1", "south": "cell-6-1", "east": "cell-5-2", "west": None},
-    {"name": "cell-5-2", "type": "wall", "north": "cell-4-2", "south": "cell-6-2", "east": "cell-5-3", "west": "cell-5-1"},
-    {"name": "cell-5-3", "type": "blank", "north": "cell-4-3", "south": "cell-6-3", "east": "cell-5-4", "west": "cell-5-2"},
-    {"name": "cell-5-4", "type": "blank", "north": "cell-4-4", "south": "cell-6-4", "east": "cell-5-5", "west": "cell-5-3"},
-    {"name": "cell-5-5", "type": "blank", "north": "cell-4-5", "south": "cell-6-5", "east": "cell-5-6", "west": "cell-5-4"},
-    {"name": "cell-5-6", "type": "button", "north": "cell-4-6", "south": "cell-6-6", "east": None,       "west": "cell-5-5"},
-    ],
-    [
-    # Row 6
-    {"name": "cell-6-1", "type": "blank", "north": "cell-5-1", "south": None,       "east": "cell-6-2", "west": None},
-    {"name": "cell-6-2", "type": "button", "north": "cell-5-2", "south": None,       "east": "cell-6-3", "west": "cell-6-1"},
-    {"name": "cell-6-3", "type": "blank", "north": "cell-5-3", "south": None,       "east": "cell-6-4", "west": "cell-6-2"},
-    {"name": "cell-6-4", "type": "blank", "north": "cell-5-4", "south": None,       "east": "cell-6-5", "west": "cell-6-3"},
-    {"name": "cell-6-5", "type": "blank", "north": "cell-5-5", "south": None,       "east": "cell-6-6", "west": "cell-6-4"},
-    {"name": "cell-6-6", "type": "blank", "north": "cell-5-6", "south": None,       "east": None,       "west": "cell-6-5"}
-    ]
-]
-
-# Directions (row, col deltas)
+# --- Game settings ---
+GRID_SIZE = 6
 DIRECTIONS = {
-    "north": (-1, 0), "south": (1, 0),
-    "west": (0, -1), "east": (0, 1),
-    "northwest": (-1, -1), "northeast": (-1, 1),
-    "southwest": (1, -1), "southeast": (1, 1)
+    "north": (-1, 0),
+    "south": (1, 0),
+    "east": (0, 1),
+    "west": (0, -1)
 }
 
-# Starting state
-player_pos = (0, 0)  # row 0, col 0 ("cell-1-1")
-buttons_to_press = {cell["name"] for row in board for cell in row if cell["type"] == "button"}
+# --- Global state ---
+player_pos = [0, 0]
 pressed_buttons = set()
-move_limit = 15
+buttons_to_press = set()
+move_limit = 30
 moves_used = 0
+mode = None
+timer_event = threading.Event()
+time_left = None  # shared timer state
 
-timer_event = threading.Event() #stop timer if set
 
-def get_cell(r, c):
-    if 0 <= r < 6 and 0 <= c < 6:
-        return board[r][c]
-    return None
+# --- Helpers ---
+def clear_screen():
+    os.system("cls" if os.name == "nt" else "clear")
+
+
+def get_cell(row, col):
+    return board[row][col]
+
+
+def generate_board():
+    board = []
+    for r in range(GRID_SIZE):
+        row = []
+        for c in range(GRID_SIZE):
+            cell_type = "blank"
+            name = f"cell-{r+1}-{c+1}"
+            row.append({"name": name, "type": cell_type})
+        board.append(row)
+    return board
+
+
+def place_special_cells(board):
+    # Place exit
+    while True:
+        r, c = random.randint(0, GRID_SIZE-1), random.randint(0, GRID_SIZE-1)
+        if (r, c) != (0, 0):
+            board[r][c]["type"] = "exit"
+            break
+    # Place buttons
+    for _ in range(5):
+        while True:
+            r, c = random.randint(0, GRID_SIZE-1), random.randint(0, GRID_SIZE-1)
+            if board[r][c]["type"] == "blank":
+                board[r][c]["type"] = "button"
+                buttons_to_press.add((r, c))
+                break
+    return board
+
 
 def print_mini_map(path=None):
-    for r in range(6):
-        row_str = ""
-        for c in range(6):
-            if path and (r, c) in path and (r, c) != player_pos:
-                row_str += " * "  # highlight planned path
-                continue
-            cell = board[r][c]
-            if (r, c) == player_pos:
-                row_str += " P "
-            elif cell["type"] == "wall":
-                row_str += " # "
-            elif cell["type"] == "spike":
-                row_str += " X "
-            elif cell["type"] == "button":
-                if cell["name"] in pressed_buttons:
-                    row_str += " b "  # pressed
-                else:
-                    row_str += " B "  # unpressed
-            elif cell["type"] == "start":
-                row_str += " S "
+    for r in range(GRID_SIZE):
+        row = ""
+        for c in range(GRID_SIZE):
+            if [r, c] == player_pos:
+                row += "😀 "
+            elif path and (r, c) in path:
+                row += "· "
+            elif board[r][c]["type"] == "exit":
+                row += "🚪 "
+            elif board[r][c]["type"] == "button":
+                row += "🔘 " if (r, c) not in pressed_buttons else "✅ "
             else:
-                row_str += " . "
-        print(row_str)
-    print()
+                row += "⬜ "
+        print(row)
 
-def preview_path(direction, steps):
-    """Return the path the player would take, stopping early if blocked."""
-    dr, dc = DIRECTIONS[direction]
-    r, c = player_pos
-    path = []
-    for _ in range(steps):
-        r += dr
-        c += dc
-        cell = get_cell(r, c)
-        if cell is None or cell["type"] == "wall":
-            break  # stop pathing at edge or wall
-        path.append((r, c))
-    return path
 
-def move_player(path):
-    """Actually move the player along the chosen path."""
-    global player_pos, pressed_buttons, moves_used
-    for (r, c) in path:
-        cell = get_cell(r, c)
-        if cell["type"] == "spike":
-            print(f"💀 You stepped on {cell['name']}... SPIKES! Game over.")
-            exit()
-        if cell["type"] == "button" and cell["name"] not in pressed_buttons:
-            pressed_buttons.add(cell["name"])
-            print(f"🔘 Pressed button at {cell['name']}!")
-        player_pos = (r, c)
-    moves_used += 1
+def render_game_state(path=None):
+    clear_screen()
+    
+    print(f"Buttons pressed: {len(pressed_buttons)}/{len(buttons_to_press)} | Moves left: {move_limit - moves_used}")
+    print(f"📍 You are at {get_cell(*player_pos)['name']} ({get_cell(*player_pos)['type']})")
+    print_mini_map(path)
+
+
 
 def start_timer(duration):
     def run():
-        remaining = duration
-        while remaining > 0 and not timer_event.is_set():
-            mins, secs = divmod(remaining, 60)
-            # carriage-return keeps the timer on one line in the terminal
-            print(f"⏱ Time left: {mins}:{secs:02d}", end="\r")
+        global time_left
+        time_left = duration
+        while time_left > 0 and not timer_event.is_set():
             time.sleep(1)
-            remaining -= 1
+            time_left -= 1
         if timer_event.is_set():
             return
         print("\n⏰ Time's up! Game over.")
-        os._exit(0)  # force-terminate even if input() is blocking
+        os._exit(0)
     t = threading.Thread(target=run, daemon=True)
     t.start()
 
-#tutorial text
-print("""
-Welcome to the tutorial for A Chessish Game, a puzzle game with different objectives and obstacles.
-This game has you play as a chess piece, and currently, you are a queen (you can move any number of spaces in all eight directions).
-For example, you can move like this: 'north 3' (putting you 3 spaces north) or 'southeast 2'(putting you 2 spaces south east).
-You may notice that certain spaces on the board have different names.
-The button (b) spaces are your win condition: you must stand on each to win.
-The spike (X) space will make you lose when stepped on.
-The wall space (#) will stop your movement, and cannot be stepped on. Got that?
-Ok go wander into the wild good luck :)
-""")
 
-mode = input("Choose mode: 'moves' (default) or 'timed': ").strip().lower()
+
+def preview_path(direction, steps):
+    dr, dc = DIRECTIONS[direction]
+    path = []
+    r, c = player_pos
+    for _ in range(steps):
+        r, c = r + dr, c + dc
+        if not (0 <= r < GRID_SIZE and 0 <= c < GRID_SIZE):
+            return None
+        path.append((r, c))
+    return path
+
+
+def move_player(path):
+    global moves_used
+    for (r, c) in path:
+        player_pos[0], player_pos[1] = r, c
+        moves_used += 1
+        if board[r][c]["type"] == "button" and (r, c) not in pressed_buttons:
+            pressed_buttons.add((r, c))
+            print(f"🔘 You pressed a button at {board[r][c]['name']}!")
+        if board[r][c]["type"] == "exit":
+            if pressed_buttons == buttons_to_press:
+                print("🎉 You pressed all buttons and reached the exit! You win!")
+                timer_event.set()
+                os._exit(0)
+            else:
+                print("🚪 You found the exit, but not all buttons are pressed!")
+
+
+# --- Main game ---
+board = generate_board()
+board = place_special_cells(board)
+
+print("Choose mode: 'timed' or 'move-limited'")
+mode = input("> ").strip().lower()
 if mode == "timed":
-    try:
-        duration = int(input("Enter time limit in seconds (e.g., 60): ").strip())
-    except:
-        duration = 60
-    start_timer(duration)
+    start_timer(120)  # 2 minutes
+    print("You have 2 minutes to finish up!")
+    time.sleep(2)
+elif mode == "move-limited":
+    move_limit = 30
+else:
+    print("Invalid mode, defaulting to move-limited.")
+    mode = "move-limited"
 
-# Game loop
 while True:
     if pressed_buttons == buttons_to_press:
         print("🎉 You pressed all the buttons! You win!")
-        timer_event.set()   # stop timer thread if running
+        timer_event.set()
         break
     if moves_used >= move_limit:
         print("❌ Out of moves! Game over.")
         timer_event.set()
         break
 
-    print(f"\n📍 You are at {get_cell(*player_pos)['name']} ({get_cell(*player_pos)['type']})")
-    print(f"Buttons pressed: {len(pressed_buttons)}/{len(buttons_to_press)} | Moves left: {move_limit - moves_used}")
-    print_mini_map()
+    render_game_state()
 
     cmd = input("Move (e.g., 'north 3') or 'exit': ").lower()
     if cmd == "exit":
@@ -201,8 +173,8 @@ while True:
             if not path:
                 print("🚫 Can't move that way!")
                 continue
-            print("Planned move path:")
-            print_mini_map(path)
+
+            render_game_state(path)
             confirm = input("Confirm move? (y/n): ").lower()
             if confirm == "y":
                 move_player(path)
